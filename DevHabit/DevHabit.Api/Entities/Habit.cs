@@ -5,6 +5,7 @@ public sealed class Habit
     public string Id { get; set; }
     public required string Name { get; set; } = string.Empty;
     public string? Description { get; set; }
+    public HabityType Type { get; set; }
     public Frequency Frequency { get; set; }
     public Target Target { get; set; }
     public HabitStatus Status { get; set; }
@@ -33,7 +34,7 @@ public enum HabitStatus
 public sealed class Frequency
 {
     public FrequencyType Type { get; set; }
-    public int TimerPerPeriod { get; set; }
+    public int TimesPerPeriod { get; set; }
 }
 
 public enum FrequencyType

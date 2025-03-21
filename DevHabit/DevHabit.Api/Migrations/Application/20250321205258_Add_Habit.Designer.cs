@@ -12,7 +12,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace DevHabit.Api.Migrations.Application
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20250321202810_Add_Habit")]
+    [Migration("20250321205258_Add_Habit")]
     partial class Add_Habit
     {
         /// <inheritdoc />
@@ -64,6 +64,10 @@ namespace DevHabit.Api.Migrations.Application
                         .HasColumnType("integer")
                         .HasColumnName("status");
 
+                    b.Property<int>("Type")
+                        .HasColumnType("integer")
+                        .HasColumnName("type");
+
                     b.Property<DateTime?>("UpdatedAtUtc")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("updated_at_utc");
@@ -82,9 +86,9 @@ namespace DevHabit.Api.Migrations.Application
                                 .HasColumnType("character varying(500)")
                                 .HasColumnName("id");
 
-                            b1.Property<int>("TimerPerPeriod")
+                            b1.Property<int>("TimesPerPeriod")
                                 .HasColumnType("integer")
-                                .HasColumnName("frequency_timer_per_period");
+                                .HasColumnName("frequency_times_per_period");
 
                             b1.Property<int>("Type")
                                 .HasColumnType("integer")

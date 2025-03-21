@@ -61,6 +61,10 @@ namespace DevHabit.Api.Migrations.Application
                         .HasColumnType("integer")
                         .HasColumnName("status");
 
+                    b.Property<int>("Type")
+                        .HasColumnType("integer")
+                        .HasColumnName("type");
+
                     b.Property<DateTime?>("UpdatedAtUtc")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("updated_at_utc");
@@ -79,9 +83,9 @@ namespace DevHabit.Api.Migrations.Application
                                 .HasColumnType("character varying(500)")
                                 .HasColumnName("id");
 
-                            b1.Property<int>("TimerPerPeriod")
+                            b1.Property<int>("TimesPerPeriod")
                                 .HasColumnType("integer")
-                                .HasColumnName("frequency_timer_per_period");
+                                .HasColumnName("frequency_times_per_period");
 
                             b1.Property<int>("Type")
                                 .HasColumnType("integer")
