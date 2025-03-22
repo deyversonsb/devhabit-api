@@ -67,7 +67,6 @@ internal static class HabitMappings
 			CreatedAtUtc = DateTime.UtcNow
 		};
 	}
-
 	public static void UpdateFromDto(this Habit habit, UpdateHabitDto dto)
 	{
 		habit.Name = dto.Name;
