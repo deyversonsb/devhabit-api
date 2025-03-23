@@ -1,4 +1,7 @@
-﻿namespace DevHabit.Api.DTOs.Tags;
+﻿using FluentValidation;
+using Microsoft.AspNetCore.Rewrite;
+
+namespace DevHabit.Api.DTOs.Tags;
 
 public sealed record CreateTagDto
 {
