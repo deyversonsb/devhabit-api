@@ -53,30 +53,11 @@ public sealed class TagsController(
     [HttpPost]
     public async Task<ActionResult<TagDto>> CreateTag(
         CreateTagDto createTagDto, 
-        IValidator<CreateTagDto> validator,
-        ProblemDetailsFactory problemDetailsFactory)
+        IValidator<CreateTagDto> validator)
     {
-        ValidationResult validationResult = await validator.ValidateAsync(createTagDto);
-
-        if (!validationResult.IsValid)
-        {
-            ProblemDetails problemDetails = problemDetailsFactory.CreateProblemDetails(
-                HttpContext,
-                StatusCodes.Status400BadRequest);
-
-            problemDetails.Extensions.Add("errors", validationResult.ToDictionary());
-
-            return BadRequest(problemDetails);
-        }
+        await validator.ValidateAndThrowAsync(createTagDto);
 
         Tag tag = createTagDto.ToEntity();
-
-        if (await TagExists(dbContext, tag))
-        {
-            return Problem(
-                detail: $"The name '{tag.Name}' already exists.",
-                statusCode: StatusCodes.Status409Conflict);
-        }
 
         dbContext.Tags.Add(tag);
 
