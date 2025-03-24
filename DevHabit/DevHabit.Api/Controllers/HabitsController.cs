@@ -1,4 +1,5 @@
-﻿using System.Linq.Expressions;
+﻿using System.Linq;
+using System.Linq.Expressions;
 using DevHabit.Api.Database;
 using DevHabit.Api.DTOs.Habits;
 using DevHabit.Api.Entities;
@@ -16,10 +17,14 @@ public sealed class HabitsController(
     ApplicationDbContext dbContext) : ControllerBase
 {
     [HttpGet]
-    public async Task<ActionResult<HabitCollectionDto>> GetHabits()
+    public async Task<ActionResult<HabitCollectionDto>> GetHabits(
+        [FromQuery] HabitsQueryParameters query)
     {
+        query.Search ??= query.Search?.Trim().ToLower();
+
         List<HabitDto> habits = await dbContext
             .Habits
+            .Searching(query)
             .Select(HabitQueries.ProjectToDto())
             .ToListAsync();
 
