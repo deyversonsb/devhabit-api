@@ -5,7 +5,7 @@ namespace DevHabit.Api.DTOs.Habits;
 
 public static class HabitExtensions
 {
-    public static IQueryable<Habit> Searching(this IQueryable<Habit> habits, HabitsQueryParameters query)
+    public static IQueryable<Habit> ApplySearchOrFilter(this IQueryable<Habit> habits, HabitsQueryParameters query)
         => habits
             .Where(h => query.Search == null ||
                         EF.Functions.Like(h.Name.ToLower(), $"%{query.Search}%") ||
