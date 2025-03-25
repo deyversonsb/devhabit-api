@@ -2,6 +2,7 @@
 using System.Threading.Tasks;
 using System.Xml.Linq;
 using DevHabit.Api.Database;
+using DevHabit.Api.DTOs.Common;
 using DevHabit.Api.DTOs.Tags;
 using DevHabit.Api.Entities;
 using FluentValidation;
@@ -18,19 +19,16 @@ public sealed class TagsController(
     ApplicationDbContext dbContext) : ControllerBase
 {
     [HttpGet]
-    public async Task<ActionResult<TagCollectionDto>> GetTags()
+    public async Task<ActionResult<PaginationResult<TagDto>>> GetTags()
     {
-        List<TagDto> tags = await dbContext
+        IQueryable<TagDto> tags = dbContext
             .Tags
-            .Select(TagQueries.ProjectToDto())
-            .ToListAsync();
+            .Select(TagQueries.ProjectToDto());
 
-        var tagCollectionDto = new TagCollectionDto
-        {
-            Data = tags
-        };
+        PaginationResult<TagDto> paginationResult = await PaginationResult<TagDto>
+            .CreateAsync(tags);
 
-        return Ok(tagCollectionDto);
+        return Ok(paginationResult);
     }
 
     [HttpGet("{id}")]

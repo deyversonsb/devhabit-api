@@ -7,7 +7,7 @@ internal static class QueryableExtensions
         this IQueryable<T> query,
         string? sort,
         SortMapping[] mappings,
-        string defaultOrderBy = "Id")
+        string defaultOrderBy = "CreatedAtUtc")
     {
         if (string.IsNullOrWhiteSpace(sort))
         {

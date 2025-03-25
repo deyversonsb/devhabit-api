@@ -1,6 +1,7 @@
 ﻿using System.Linq;
 using System.Linq.Expressions;
 using DevHabit.Api.Database;
+using DevHabit.Api.DTOs.Common;
 using DevHabit.Api.DTOs.Habits;
 using DevHabit.Api.Entities;
 using DevHabit.Api.Services.Sorting;
@@ -18,7 +19,7 @@ public sealed class HabitsController(
     ApplicationDbContext dbContext) : ControllerBase
 {
     [HttpGet]
-    public async Task<ActionResult<HabitCollectionDto>> GetHabits(
+    public async Task<ActionResult<PaginationResult<HabitDto>>> GetHabits(
         [FromQuery] HabitsQueryParameters query,
         SortMappingProvider sortMappingProvider)
     {
@@ -33,19 +34,16 @@ public sealed class HabitsController(
 
         SortMapping[] sortMappings = sortMappingProvider.GetMappings<HabitDto, Habit>();
 
-        List<HabitDto> habits = await dbContext
+        IQueryable<HabitDto> habitsQuery = dbContext
             .Habits
             .ApplySearchOrFilter(query)
             .ApplySort(query.Sort, sortMappings)
-            .Select(HabitQueries.ProjectToDto())
-            .ToListAsync();
+            .Select(HabitQueries.ProjectToDto());
 
-        var habitsCollectionDto = new HabitCollectionDto
-        {
-            Data = habits
-        };
+        PaginationResult<HabitDto> paginationResult = await PaginationResult<HabitDto>
+            .CreateAsync(habitsQuery, query.Page, query.PageSize);
 
-        return Ok(habitsCollectionDto);
+        return Ok(paginationResult);
     }
 
     [HttpGet("{id}")]
