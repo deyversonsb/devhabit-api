@@ -11,7 +11,6 @@ public sealed record PaginationResult<T> : ICollectionResponse<T>
     public int TotalPages => (int)Math.Ceiling(TotalCount / (double)PageSize);
     public bool HasPreviousPage => Page > 1;
     public bool HasNextPage => Page < TotalPages;
-
     public static async Task<PaginationResult<T>> CreateAsync(
         IQueryable<T> query, 
         int page = 1, 
