@@ -17,14 +17,20 @@ namespace DevHabit.Api.Controllers;
 [ApiController]
 [Route("habits")]
 [ApiVersion(1.0)]
+[Produces(
+    MediaTypeNames.Application.Json,
+    CustomMediaTypeNames.Application.JsonV1,
+    CustomMediaTypeNames.Application.JsonV2,
+    CustomMediaTypeNames.Application.HateoasJson,
+    CustomMediaTypeNames.Application.HateoasJsonV1,
+    CustomMediaTypeNames.Application.HateoasJsonV2)]
 public sealed class HabitsController(
     ApplicationDbContext dbContext,
     LinkService linkService) : ControllerBase
 {
     [HttpGet]
-    [Produces(MediaTypeNames.Application.Json, CustomMediaTypeNames.Application.HateoasJson)]
     public async Task<IActionResult> GetHabits(
-        [FromQuery] HabitsQueryParameters query,
+        [FromQuery] HabitQueryParameters query,
         SortMappingProvider sortMappingProvider,
         DataShapingService dataShapingService)
     {
@@ -59,20 +65,19 @@ public sealed class HabitsController(
             .Take(query.PageSize)
             .ToListAsync();
 
-        bool includeLinks = query.Accept?.Equals(CustomMediaTypeNames.Application.HateoasJson, StringComparison.OrdinalIgnoreCase) ?? false;
-
+       
         var paginationResult = new PaginationResult<ExpandoObject>
         {
             Items = dataShapingService.ShapeCollectionData(
                 habits,
                 query.Fields,
-                includeLinks ? h => CreateLinksForHabit(h.Id, query.Fields) : null),
+                query.IncludeLinks ? h => CreateLinksForHabit(h.Id, query.Fields) : null),
             Page = query.Page,
             PageSize = query.PageSize,
             TotalCount = totalCount
         };
 
-        if (includeLinks)
+        if (query.IncludeLinks)
         {
             paginationResult.Links = CreateLinksForHabits(
                 query,
@@ -127,16 +132,14 @@ public sealed class HabitsController(
     [ApiVersion(2.0)]
     public async Task<IActionResult> GetHabitV2(
         string id,
-        string? fields,
-        [FromHeader(Name = "Accept")]
-        string? accept,
+        [FromQuery] HabitQueryParameters query,
         DataShapingService dataShapingService)
     {
-        if (!dataShapingService.Validate<HabitWithTagsDto>(fields))
+        if (!dataShapingService.Validate<HabitWithTagsDto>(query.Fields))
         {
             return Problem(
             statusCode: StatusCodes.Status400BadRequest,
-                detail: $"The provided data shaping fields parameter isn't valid. '{fields}'");
+                detail: $"The provided data shaping fields parameter isn't valid. '{query.Fields}'");
         }
 
         HabitWithTagsDtoV2? habit = await dbContext
@@ -150,13 +153,11 @@ public sealed class HabitsController(
             return NotFound();
         }
 
-        ExpandoObject shapedHabitDto = dataShapingService.ShapeData(habit, fields);
+        ExpandoObject shapedHabitDto = dataShapingService.ShapeData(habit, query.Fields);
 
-        bool includeLinks = accept?.Equals(CustomMediaTypeNames.Application.HateoasJson, StringComparison.OrdinalIgnoreCase) ?? false;
-
-        if (includeLinks)
+        if (query.IncludeLinks)
         {
-            List<LinkDto> links = CreateLinksForHabit(id, fields);
+            List<LinkDto> links = CreateLinksForHabit(id, query.Fields);
             shapedHabitDto.TryAdd("links", links);
         }
 
@@ -244,7 +245,7 @@ public sealed class HabitsController(
         return NoContent();
     }
     private List<LinkDto> CreateLinksForHabits(
-        HabitsQueryParameters habitsQueryParameters,
+        HabitQueryParameters habitQueryParameters,
         bool hasNextPage,
         bool hasPreviousPage)
     {
@@ -252,13 +253,13 @@ public sealed class HabitsController(
         [
             linkService.Create(nameof(GetHabits), "self", HttpMethods.Get, new
             {
-                page = habitsQueryParameters.Page,
-                pageSize = habitsQueryParameters.PageSize,
-                fields = habitsQueryParameters.Fields,
-                q = habitsQueryParameters.Search,
-                sort = habitsQueryParameters.Sort,
-                type = habitsQueryParameters.Type,
-                status = habitsQueryParameters.Status
+                page = habitQueryParameters.Page,
+                pageSize = habitQueryParameters.PageSize,
+                fields = habitQueryParameters.Fields,
+                q = habitQueryParameters.Search,
+                sort = habitQueryParameters.Sort,
+                type = habitQueryParameters.Type,
+                status = habitQueryParameters.Status
             }),
             linkService.Create(nameof(CreateHabit), "create", HttpMethods.Post)
         ];
@@ -267,13 +268,13 @@ public sealed class HabitsController(
         {
             links.Add(linkService.Create(nameof(GetHabits), "next-page", HttpMethods.Get, new
             {
-                page = habitsQueryParameters.Page + 1,
-                pageSize = habitsQueryParameters.PageSize,
-                fields = habitsQueryParameters.Fields,
-                q = habitsQueryParameters.Search,
-                sort = habitsQueryParameters.Sort,
-                type = habitsQueryParameters.Type,
-                status = habitsQueryParameters.Status
+                page = habitQueryParameters.Page + 1,
+                pageSize = habitQueryParameters.PageSize,
+                fields = habitQueryParameters.Fields,
+                q = habitQueryParameters.Search,
+                sort = habitQueryParameters.Sort,
+                type = habitQueryParameters.Type,
+                status = habitQueryParameters.Status
             }));
         }
 
@@ -281,13 +282,13 @@ public sealed class HabitsController(
         {
             links.Add(linkService.Create(nameof(GetHabits), "previous-page", HttpMethods.Get, new
             {
-                page = habitsQueryParameters.Page - 1,
-                pageSize = habitsQueryParameters.PageSize,
-                fields = habitsQueryParameters.Fields,
-                q = habitsQueryParameters.Search,
-                sort = habitsQueryParameters.Sort,
-                type = habitsQueryParameters.Type,
-                status = habitsQueryParameters.Status
+                page = habitQueryParameters.Page - 1,
+                pageSize = habitQueryParameters.PageSize,
+                fields = habitQueryParameters.Fields,
+                q = habitQueryParameters.Search,
+                sort = habitQueryParameters.Sort,
+                type = habitQueryParameters.Type,
+                status = habitQueryParameters.Status
             }));
         }
 
