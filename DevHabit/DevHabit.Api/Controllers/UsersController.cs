@@ -7,7 +7,7 @@ namespace DevHabit.Api.Controllers;
 
 [ApiController]
 [Route("users")]
-internal sealed class UsersController(
+public sealed class UsersController(
     ApplicationDbContext dbContext) : ControllerBase
 {
     [HttpGet("{id}")]

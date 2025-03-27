@@ -18,6 +18,7 @@ using OpenTelemetry.Trace;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Formatters;
 using Asp.Versioning;
+using Microsoft.AspNetCore.Identity;
 
 namespace DevHabit.Api;
 
@@ -91,6 +92,13 @@ public static class DependencyInjection
                 npgsqlOptions => npgsqlOptions.MigrationsHistoryTable(HistoryRepository.DefaultTableName, Schemas.Application))
             .UseSnakeCaseNamingConvention());
 
+        builder.Services.AddDbContext<ApplicationIdentityDbContext>(options =>
+            options
+            .UseNpgsql(
+                builder.Configuration.GetConnectionString("Database"),
+                npgsqlOptions => npgsqlOptions.MigrationsHistoryTable(HistoryRepository.DefaultTableName, Schemas.Identity))
+            .UseSnakeCaseNamingConvention());
+
         return builder;
     }
     public static WebApplicationBuilder AddObservability(this WebApplicationBuilder builder)
@@ -115,7 +123,7 @@ public static class DependencyInjection
 
         return builder;
     }
-    public static WebApplicationBuilder AddApplicationService(this WebApplicationBuilder builder)
+    public static WebApplicationBuilder AddApplicationServices(this WebApplicationBuilder builder)
     {
         builder.Services.AddValidatorsFromAssemblyContaining<Program>(includeInternalTypes: true);
 
@@ -126,6 +134,15 @@ public static class DependencyInjection
         builder.Services.AddHttpContextAccessor();
 
         builder.Services.AddSingleton<ISortMappingDefinition, SortMappingDefinition<HabitDto, Habit>>(_ => HabitMappings.SortMapping);
+
+        return builder;
+    }
+
+    public static WebApplicationBuilder AddAuthenticationServices(this WebApplicationBuilder builder)
+    {
+        builder.Services
+            .AddIdentity<IdentityUser, IdentityRole>()
+            .AddEntityFrameworkStores<ApplicationIdentityDbContext>();
 
         return builder;
     }
