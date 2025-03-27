@@ -15,11 +15,12 @@ internal static class TagMappings
             UpdatedAtUtc = tag.UpdatedAtUtc
         };
     }
-    public static Tag ToEntity(this CreateTagDto dto)
+    public static Tag ToEntity(this CreateTagDto dto, string userId)
     {
         return new Tag
         {
             Id = $"t_{Guid.CreateVersion7():N}", // Interpolation to remove hyphens is the same {Guid.CreateVersion7().ToString("N")}
+            UserId = userId,
             Name = dto.Name,
             Description = dto.Description,
             CreatedAtUtc = DateTime.UtcNow

@@ -27,14 +27,23 @@ namespace DevHabit.Api.Controllers;
     CustomMediaTypeNames.Application.HateoasJsonV1)]
 public sealed class TagsController(
     ApplicationDbContext dbContext,
-    LinkService linkService) : ControllerBase
+    LinkService linkService,
+    UserContext userContext) : ControllerBase
 {
     [HttpGet]
     public async Task<ActionResult<TagsCollectionDto>> GetTags(
         [FromHeader] AcceptHeaderDto acceptHeader)
     {
+        string? userId = await userContext.GetUserIdAsync();
+
+        if (string.IsNullOrWhiteSpace(userId))
+        {
+            return Unauthorized();
+        }
+
         List<TagDto> tags = await dbContext
             .Tags
+            .Where(t => t.UserId == userId)
             .Select(TagQueries.ProjectToDto())
             .ToListAsync();
 
@@ -54,9 +63,16 @@ public sealed class TagsController(
     [HttpGet("{id}")]
     public async Task<ActionResult<TagDto>> GetTag(string id, [FromHeader] AcceptHeaderDto acceptHeader)
     {
+        string? userId = await userContext.GetUserIdAsync();
+
+        if (string.IsNullOrWhiteSpace(userId))
+        {
+            return Unauthorized();
+        }
+
         TagDto? tag = await dbContext
             .Tags
-            .Where(t => t.Id == id)
+            .Where(t => t.UserId == userId)
             .Select(TagQueries.ProjectToDto())
             .FirstOrDefaultAsync();
 
@@ -80,6 +96,13 @@ public sealed class TagsController(
         IValidator<CreateTagDto> validator,
         ProblemDetailsFactory problemDetailsFactory)
     {
+        string? userId = await userContext.GetUserIdAsync();
+
+        if (string.IsNullOrWhiteSpace(userId))
+        {
+            return Unauthorized();
+        }
+
         ValidationResult validationResult = await validator.ValidateAsync(createTagDto);
 
         if (!validationResult.IsValid)
@@ -93,7 +116,7 @@ public sealed class TagsController(
             return BadRequest(problemDetails);
         }
 
-        Tag tag = createTagDto.ToEntity();
+        Tag tag = createTagDto.ToEntity(userId);
 
         dbContext.Tags.Add(tag);
 
