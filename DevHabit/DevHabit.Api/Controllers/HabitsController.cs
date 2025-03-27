@@ -1,6 +1,6 @@
 ﻿using System.Dynamic;
 using System.Net.Mime;
-using System.Text.Json;
+using Asp.Versioning;
 using DevHabit.Api.Database;
 using DevHabit.Api.DTOs.Common;
 using DevHabit.Api.DTOs.Habits;
@@ -11,18 +11,18 @@ using FluentValidation;
 using Microsoft.AspNetCore.JsonPatch;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using Newtonsoft.Json;
 
 namespace DevHabit.Api.Controllers;
 
 [ApiController]
 [Route("habits")]
+[ApiVersion(1.0)]
 public sealed class HabitsController(
     ApplicationDbContext dbContext,
     LinkService linkService) : ControllerBase
 {
     [HttpGet]
-    [Produces(MediaTypeNames.Application.Json, CustomMediaTypeNames.HateoasJson)]
+    [Produces(MediaTypeNames.Application.Json, CustomMediaTypeNames.Application.HateoasJson)]
     public async Task<IActionResult> GetHabits(
         [FromQuery] HabitsQueryParameters query,
         SortMappingProvider sortMappingProvider,
@@ -59,7 +59,7 @@ public sealed class HabitsController(
             .Take(query.PageSize)
             .ToListAsync();
 
-        bool includeLinks = query.Accept?.Equals(CustomMediaTypeNames.HateoasJson, StringComparison.OrdinalIgnoreCase) ?? false;
+        bool includeLinks = query.Accept?.Equals(CustomMediaTypeNames.Application.HateoasJson, StringComparison.OrdinalIgnoreCase) ?? false;
 
         var paginationResult = new PaginationResult<ExpandoObject>
         {
@@ -84,6 +84,7 @@ public sealed class HabitsController(
     }
 
     [HttpGet("{id}")]
+    [MapToApiVersion(1.0)]
     public async Task<IActionResult> GetHabit(
         string id,
         string? fields,
@@ -111,7 +112,47 @@ public sealed class HabitsController(
 
         ExpandoObject shapedHabitDto = dataShapingService.ShapeData(habit, fields);
 
-        bool includeLinks = accept?.Equals(CustomMediaTypeNames.HateoasJson, StringComparison.OrdinalIgnoreCase) ?? false;
+        bool includeLinks = accept?.Equals(CustomMediaTypeNames.Application.HateoasJson, StringComparison.OrdinalIgnoreCase) ?? false;
+
+        if (includeLinks)
+        {
+            List<LinkDto> links = CreateLinksForHabit(id, fields);
+            shapedHabitDto.TryAdd("links", links);
+        }
+
+        return Ok(shapedHabitDto);
+    }
+
+    [HttpGet("{id}")]
+    [ApiVersion(2.0)]
+    public async Task<IActionResult> GetHabitV2(
+        string id,
+        string? fields,
+        [FromHeader(Name = "Accept")]
+        string? accept,
+        DataShapingService dataShapingService)
+    {
+        if (!dataShapingService.Validate<HabitWithTagsDto>(fields))
+        {
+            return Problem(
+            statusCode: StatusCodes.Status400BadRequest,
+                detail: $"The provided data shaping fields parameter isn't valid. '{fields}'");
+        }
+
+        HabitWithTagsDtoV2? habit = await dbContext
+            .Habits
+            .Where(h => h.Id == id)
+            .Select(HabitQueries.ProjectToDtoWithTagsV2())
+            .FirstOrDefaultAsync();
+
+        if (habit is null)
+        {
+            return NotFound();
+        }
+
+        ExpandoObject shapedHabitDto = dataShapingService.ShapeData(habit, fields);
+
+        bool includeLinks = accept?.Equals(CustomMediaTypeNames.Application.HateoasJson, StringComparison.OrdinalIgnoreCase) ?? false;
 
         if (includeLinks)
         {
@@ -267,18 +308,4 @@ public sealed class HabitsController(
                 new { habitId = id },
                 HabitTagsController.Name)
         ];
-
-    private static string PaginationResultSerialize(PaginationResult<ExpandoObject>? paginationResult)
-    {
-#pragma warning disable CA1869 // Cache and reuse 'JsonSerializerOptions' instances
-        var serializeOptions = new JsonSerializerOptions
-        {
-            WriteIndented = true,
-            DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull
-        };
-#pragma warning restore CA1869 // Cache and reuse 'JsonSerializerOptions' instances
-
-        return System.Text.Json.JsonSerializer.Serialize(paginationResult, serializeOptions);
-    }
-
 }
