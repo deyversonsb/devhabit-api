@@ -15,7 +15,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace DevHabit.Api.Controllers;
 
-[Authorize]
+[Authorize(Roles = Roles.Member)]
 [ApiController]
 [Route("habits")]
 [ApiVersion(1.0)]
@@ -302,6 +302,10 @@ public sealed class HabitsController(
         bool hasNextPage,
         bool hasPreviousPage)
     {
+
+        // If want to add or remove some links based on role you need to check with this code below 
+        // User.IsInRole(Roles.Member);
+
         List<LinkDto> links =
         [
             linkService.Create(nameof(GetHabits), "self", HttpMethods.Get, new

@@ -17,7 +17,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace DevHabit.Api.Controllers;
 
-[Authorize]
+[Authorize(Roles = Roles.Member)]
 [ApiController]
 [Route("tags")]
 [Produces(
@@ -166,21 +166,6 @@ public sealed class TagsController(
         return NoContent();
     }
     #region Private Methods
-    private static async Task<bool> TagExists(ApplicationDbContext dbContext, Tag tag)
-    {
-        List<string> tagsName = await dbContext.Tags.Select(t => t.Name).ToListAsync();
-
-        for (int i = 0; i < tagsName.Count; i++)
-        {
-            if (tagsName[i].Equals(tag.Name, StringComparison.OrdinalIgnoreCase))
-            {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
     private static async Task<Tag?> TagExists(ApplicationDbContext dbContext, string id)
         => await dbContext.Tags.Where(t => t.Id == id).FirstOrDefaultAsync();
     private List<LinkDto> CreateLinksForTags()
@@ -193,7 +178,6 @@ public sealed class TagsController(
 
         return links;
     }
-
     private List<LinkDto> CreateLinksForTag(string id)
     {
         List<LinkDto> links =
